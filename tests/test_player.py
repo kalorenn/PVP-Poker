@@ -2,14 +2,11 @@ import pytest
 from src.player import Player
 from src.game_logic import Card
 
-# --- Helper ---
 def create_card(rank='A', suit='H'):
     """Helper to create a Card object for testing."""
-    # Since Card is frozen, we must instantiate it fully
-    # We rely on the game_logic import being correct
+
     return Card(rank=rank, suit=suit)
 
-# --- Tests ---
 
 def test_player_initialization():
     """Test that a player is initialized with correct default values."""
@@ -73,19 +70,15 @@ def test_place_bet_all_in_exact():
     assert bet_amount == 500
     assert p.balance == 0
     assert p.current_bet == 500
-    
-    # Note: The implementation only sets is_all_in = True if amount > balance.
-    # Exact amount results in 0 balance but flag remains False in current code logic.
+
     assert p.is_all_in is False 
 
 def test_place_bet_all_in_exceed():
     """Test betting more than balance triggers All-In state."""
     p = Player(id=1, name="Player", balance=500)
-    
-    # Try to bet 600
+
     bet_amount = p.place_bet(600)
-    
-    # Should be capped at 500
+
     assert bet_amount == 500
     assert p.balance == 0
     assert p.current_bet == 500
@@ -94,22 +87,18 @@ def test_place_bet_all_in_exceed():
 def test_reset_for_new_round():
     """Test that resetting the player clears hand and round status."""
     p = Player(id=1, name="Player", balance=1000)
-    
-    # Setup "mid-round" state
+
     p.add_card(create_card('10', 'H'))
     p.place_bet(100)
     p.is_folded = True
     p.is_all_in = True
-    
-    # Action
+
     p.reset_for_new_round()
-    
-    # Assertions
+
     assert p.hand == []
     assert p.current_bet == 0
     assert p.is_folded is False
     assert p.is_all_in is False
-    # Balance should persist
     assert p.balance == 900
 
 def test_actions_dict_initialization():

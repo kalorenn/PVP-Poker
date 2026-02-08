@@ -1,5 +1,5 @@
 """
-something
+Representation of a poker player
 """
 
 from typing import List
@@ -11,7 +11,7 @@ class Player:
     id: int
     name: str
     balance: int
-    is_bot: bool = False  # <--- NEW FIELD
+    is_bot: bool = False
 
     last_action_text: str = ""
     

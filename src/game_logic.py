@@ -1,5 +1,6 @@
 """
-something
+The implementation of the elements and logic of the
+rules of Texas Hold'Em poker
 """
 
 import random
@@ -8,12 +9,11 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 from collections import Counter
 
-# Ranks mapped to integers for comparison (2=2, ... J=11, Q=12, K=13, A=14)
 RANK_VALUES = {
     '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
     '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
 }
-SUITS = ['H', 'D', 'C', 'S']  # Hearts, Diamonds, Clubs, Spades
+SUITS = ['H', 'D', 'C', 'S']
 
 @dataclass(order=True, frozen=True)
 class Card:
@@ -29,7 +29,7 @@ class Card:
         return f"{self.rank}{self.suit}"
 
 class Deck:
-
+    """Represents a 52 card deck."""
     def __init__(self) -> None:
         self.cards: List[Card] = []
         self._initialize_deck()
@@ -87,7 +87,7 @@ class HandEvaluator:
         if len(cards) < 5:
             raise ValueError("Need at least 5 cards to evaluate.")
 
-        # Generate all 5-card combinations from the available cards
+        # here generate all 5 card combinations
         possible_hands = itertools.combinations(cards, 5)
         best_score: Tuple[int, List[int]] = (-1, [])
 
@@ -100,43 +100,32 @@ class HandEvaluator:
     @staticmethod
     def _score_five_cards(cards: List[Card]) -> Tuple[int, List[int]]:
         """Internal method to score exactly 5 cards."""
-        # Sort by value descending (important for logic)
         cards.sort(key=lambda c: c.value, reverse=True)
         values = [c.value for c in cards]
         suits = [c.suit for c in cards]
 
         is_flush = len(set(suits)) == 1
 
-        # Check Straight
         is_straight = False
-        # Standard check: 5 unique values, max - min == 4
         if len(set(values)) == 5 and (values[0] - values[4] == 4):
             is_straight = True
-        # Wheel check (Ace low straight: A, 5, 4, 3, 2)
-        # In our logic A=14, so values would be [14, 5, 4, 3, 2]
         if values == [14, 5, 4, 3, 2]:
             is_straight = True
-            values = [5, 4, 3, 2, 1] # Adjust for tie-breaker comparison
+            values = [5, 4, 3, 2, 1]
 
-        # Check Straight Flush / Royal Flush
         if is_straight and is_flush:
             if values[0] == 14: # Royal
                 return (HandEvaluator.ROYAL_FLUSH, values)
             return (HandEvaluator.STRAIGHT_FLUSH, values)
 
-        # Count frequencies (Pairs, Trips, Quads)
         counts = Counter(values)
-        # Most common counts first (e.g. Quads: (4, 1), Full House: (3, 2))
         count_values = counts.most_common()
 
-        # Example structure of count_values for Full House: [(RankA, 3), (RankB, 2)]
 
         if count_values[0][1] == 4:
-            # Four of a Kind: [Rank of Quad, Kicker]
             return (HandEvaluator.FOUR_OF_A_KIND, [count_values[0][0], count_values[1][0]])
 
         if count_values[0][1] == 3 and count_values[1][1] == 2:
-            # Full House: [Rank of Trip, Rank of Pair]
             return (HandEvaluator.FULL_HOUSE, [count_values[0][0], count_values[1][0]])
 
         if is_flush:
@@ -146,22 +135,16 @@ class HandEvaluator:
             return (HandEvaluator.STRAIGHT, values)
 
         if count_values[0][1] == 3:
-            # Three of a Kind: [Rank of Trip, Kicker1, Kicker2]
             kickers = sorted([k for k, v in counts.items() if v == 1], reverse=True)
             return (HandEvaluator.THREE_OF_A_KIND, [count_values[0][0]] + kickers)
 
         if count_values[0][1] == 2 and count_values[1][1] == 2:
-            # Two Pair: [Rank Pair1, Rank Pair2, Kicker]
-            # Note: most_common preserves insertion order if counts equal?
-            # Safer to explicitly sort pairs.
             pairs = sorted([k for k, v in counts.items() if v == 2], reverse=True)
             kicker = [k for k, v in counts.items() if v == 1][0]
             return (HandEvaluator.TWO_PAIR, pairs + [kicker])
 
         if count_values[0][1] == 2:
-            # One Pair: [Rank Pair, Kicker1, Kicker2, Kicker3]
             kickers = sorted([k for k, v in counts.items() if v == 1], reverse=True)
             return (HandEvaluator.PAIR, [count_values[0][0]] + kickers)
 
-        # High Card
         return (HandEvaluator.HIGH_CARD, values)

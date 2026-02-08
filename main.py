@@ -6,11 +6,9 @@ from src.database import DatabaseManager
 from src.ui import PokerUI
 
 def main():
-    """something"""
-    # 1. Initialize Database
+    """Main function that loads the ui and game"""
+
     db = DatabaseManager("poker_game.db")
-    # 2. Launch GUI (Pass DB only, Game is None initially)
-    # The UI will handle the login and Game creation.
     ui = PokerUI(db)
     ui.run()
 

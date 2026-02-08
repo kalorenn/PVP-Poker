@@ -1,5 +1,5 @@
 """
-something
+Implementation of the SQLite database of the human player accounts
 """
 
 import sqlite3

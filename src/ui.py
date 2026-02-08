@@ -1,5 +1,6 @@
 """
-something
+Logic to create the user interface of the game itself.
+Visualizatio of the game and of various menus.
 """
 
 import pygame
@@ -33,7 +34,6 @@ class PokerUI:
         self.db = db
         self.game: Optional[PokerGame] = None
         
-        # Config State
         self.config = {
             'mode': 'PVE',
             'bot_count': 1,
@@ -41,7 +41,6 @@ class PokerUI:
             'raise_limit': 0
         }
         
-        # Fonts
         self.font = pygame.font.SysFont('Arial', 24)
         self.large_font = pygame.font.SysFont('Arial', 48, bold=True)
         self.card_font = pygame.font.SysFont('Arial', 32, bold=True)
@@ -50,7 +49,6 @@ class PokerUI:
         self.message = ""
         self.running = True
         
-        # UI Elements
         self.p1_name = ""
         self.p2_name = ""
         self.active_input_idx = -1
@@ -120,7 +118,6 @@ class PokerUI:
                      return
 
         if self.ui_state == "MENU":
-            # For menu, we usually check Start Hand button
             for rect, action, param in self.buttons:
                 if rect.collidepoint(pos):
                     if action == "deal_hand":
@@ -132,11 +129,9 @@ class PokerUI:
 
         elif self.ui_state == "INTERSTITIAL":
             self.ui_state = "GAME"
-            #FIX IS HERE
             return
         
         elif self.ui_state == "GAMEOVER":
-             # Click usually resets to menu or new hand
              self.game.start_new_hand()
              if self.game.mode == "PVE":
                  self.ui_state = "GAME"
@@ -204,11 +199,11 @@ class PokerUI:
         if not self.game or self.ui_state != "GAME": return
         if self.game.stage == SHOWDOWN or self.game.winner: return
 
-        # Check if active player is Bot
+        # check if active is bot
         active_p = self.game.players[self.game.active_player_index]
         if active_p.is_bot:
             current_time = pygame.time.get_ticks()
-            # 1000 ms = 1 second delay
+            # 1 second delay
             if current_time - self.last_bot_move_time > 1000:
                 self.game.process_bot_turn()
                 self.last_bot_move_time = current_time
@@ -257,7 +252,6 @@ class PokerUI:
                     result = self.game.process_action(action, param)
                     self._post_action(result)
                 else:
-                    # Fold/Check/Call
                     result = self.game.process_action(action, param)
                     self._post_action(result)
 
@@ -292,7 +286,6 @@ class PokerUI:
         ratio = max(0.0, min(1.0, ratio))
         self.raise_amount = int(min_val + (max_val - min_val) * ratio)
 
-    # --- DRAWING ---
     def draw(self):
         self.screen.fill(BG_COLOR)
         
@@ -332,15 +325,12 @@ class PokerUI:
             self._draw_centered_text(winner, -50, color=WHITE, size=60)
             self._draw_centered_text(f"Pot: ${self.game.pot}", 20, color=WHITE)
             
-            # --- BUTTONS ---
-            self.buttons = [] # Clear buttons for this frame
-            
-            # "Play Again" Button (Center)
+            self.buttons = []
+
             self._create_button("Play Again", SCREEN_WIDTH//2 - 100, SCREEN_HEIGHT//2 + 100, "deal_hand", width=200, height=60)
-            
-            # "Leave Table" Button (Bottom Right)
+
             menu_x = SCREEN_WIDTH - 180
-            menu_y = SCREEN_HEIGHT - 140 # Positioned near bottom right
+            menu_y = SCREEN_HEIGHT - 140
             self._create_button("Leave Table", menu_x, menu_y, "leave_table", width=150, height=60, color=(150, 50, 50))
         
         pygame.display.flip()
@@ -348,14 +338,12 @@ class PokerUI:
     def _draw_login_screen(self):
         self._draw_centered_text("Poker Simulator", -200, size=60)
         self.buttons = []
-        
-        # Labels
+
         lbl1 = self.font.render("Player 1 Name:", True, WHITE)
         self.screen.blit(lbl1, (self.input_rects[0].x, self.input_rects[0].y - 30))
         lbl2 = self.font.render("Player 2 Name (PVP):", True, WHITE)
         self.screen.blit(lbl2, (self.input_rects[1].x, self.input_rects[1].y - 30))
 
-        # Input Boxes
         for i, rect in enumerate(self.input_rects):
             color = INPUT_ACTIVE if i == self.active_input_idx else INPUT_INACTIVE
             pygame.draw.rect(self.screen, color, rect, border_radius=5)
@@ -414,7 +402,6 @@ class PokerUI:
         self._create_button("Back", 50, 50, "back_login", width=100)
 
     def _draw_table(self, show_all=False):
-        # 1. Community Cards & Pot (Keep existing code)
         start_x = SCREEN_WIDTH // 2 - (5 * 80) // 2
         card_y = SCREEN_HEIGHT // 2 - 40
         for i, card in enumerate(self.game.community_cards):
@@ -422,28 +409,20 @@ class PokerUI:
         
         pot_text = self.large_font.render(f"Pot: ${self.game.pot}", True, WHITE)
         self.screen.blit(pot_text, (SCREEN_WIDTH // 2 - 50, card_y - 40))
-
-        # 2. DYNAMIC SEATING LOGIC
-        # In Hotseat (PVP), the Active Player should always be the "Hero" (Bottom)
-        # In PVE (Bots), Player 0 is always "Hero".
         
-        hero_index = 0 # Default for PVE
+        hero_index = 0 # default for vs bots
         if self.game.mode == "PVP" and not show_all:
-             # If we are playing, the person acting is the Hero
+             # hero is changed for 1vs1 (active is hero)
              hero_index = self.game.active_player_index
-        
-        # Define Hero
+
         hero = self.game.players[hero_index]
-        
-        # Define Opponents (Everyone else)
-        # We start checking from hero_index + 1 to wrap around
+
         opponents = []
         n = len(self.game.players)
         for i in range(1, n):
             idx = (hero_index + i) % n
             opponents.append(self.game.players[idx])
 
-        # 3. Draw Opponents (Top Row)
         if opponents:
             area_width = SCREEN_WIDTH - 200
             spacing = area_width // len(opponents)
@@ -453,25 +432,21 @@ class PokerUI:
                 y = 60 
                 self._draw_player_area(bot, x, y, is_hero=False, reveal=show_all)
 
-        # 4. Draw Hero (Bottom Left)
         self._draw_player_area(hero, 50, SCREEN_HEIGHT - 220, is_hero=True, reveal=True)
 
     def _draw_player_area(self, player, x, y, is_hero, reveal=False):
         is_active = (player == self.game.players[self.game.active_player_index])
-        
-        # Dimensions
+
         w, h = (300, 200) if is_hero else (180, 130)
         card_scale = 1.0 if is_hero else 0.8
-        
-        # Background Panel
+
         bg_rect = pygame.Rect(x, y, w, h)
         bg_col = (40, 40, 50) 
         border_col = GOLD if is_active else (100, 100, 100)
         
         pygame.draw.rect(self.screen, bg_col, bg_rect, border_radius=12)
         pygame.draw.rect(self.screen, border_col, bg_rect, 3, border_radius=12)
-        
-        # Dealer Button
+
         if player == self.game.players[self.game.dealer_index]:
             btn_x = x + w - 20
             btn_y = y + 20
@@ -481,18 +456,14 @@ class PokerUI:
             d_rect = d_text.get_rect(center=(btn_x, btn_y))
             self.screen.blit(d_text, d_rect)
 
-        # Text Info
         name_font = self.large_font if is_hero else self.font
         color = WHITE if is_active else GRAY
-        
-        # Name
+
         self.screen.blit(name_font.render(player.name[:12], True, color), (x + 15, y + 10))
-        
-        # Balance & Bet
+
         bal_str = f"${player.balance}"
         bet_str = "All-In" if player.is_all_in else f"Bet: ${player.current_bet}"
-        
-        # Action Text
+
         action_color = (100, 255, 100)
         action_text = self.font.render(player.last_action_text, True, action_color)
 
@@ -507,7 +478,6 @@ class PokerUI:
             self.screen.blit(action_text, (x + 15, y + 125)) 
             card_start_y = y + 60
 
-        # Draw Cards (ONLY if revealed)
         card_w = int(80 * card_scale)
         card_h = int(120 * card_scale)
         card_spacing = int(85 * card_scale)
@@ -516,20 +486,17 @@ class PokerUI:
         for k, card in enumerate(player.hand):
             cx = x + card_x_offset + k * card_spacing
             cy = card_start_y
-            
-            # MODIFIED: Removed the 'else' block for card backs.
-            # We only draw if we are allowed to see the face (Hero or Showdown).
+
             if reveal or self.game.stage == SHOWDOWN:
                 self._draw_card(card, cx, cy, w=card_w, h=card_h)
 
     def _draw_card(self, card, x, y, w=80, h=120):
-        # Adjusted to accept dynamic width/height for scaling
         pygame.draw.rect(self.screen, WHITE, (x, y, w, h), border_radius=5)
         pygame.draw.rect(self.screen, BLACK, (x, y, w, h), 2)
         color = RED if card.suit in ['H', 'D'] else BLACK
         suit_sym = {'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠'}.get(card.suit, card.suit)
         
-        # Scale fonts slightly if small card
+        # font scale down for smaller cards
         font_s = self.card_font if w > 60 else self.font
         
         self.screen.blit(font_s.render(f"{card.rank}", True, color), (x + 5, y + 5))
@@ -543,7 +510,7 @@ class PokerUI:
         pygame.draw.rect(self.screen, WHITE, (x, y, w, h), 2)
 
     def _draw_main_buttons(self):
-        self.buttons = [] # It is safe to clear here if this is the only place drawing buttons for this state
+        self.buttons = []
         
         menu_x = SCREEN_WIDTH - 180
         menu_y = SCREEN_HEIGHT - 350
@@ -552,30 +519,23 @@ class PokerUI:
         spacing = 70
         
         p = self.game.players[self.game.active_player_index]
-        
-        # If it's a Bot's turn, we usually hide buttons, 
-        # BUT we should still show "Leave Table" so you aren't stuck waiting!
+
         if p.is_bot:
              self._draw_centered_text("Bot Thinking...", 300, GOLD)
-             # Draw Leave Button at the bottom position even if bot is thinking
              self._create_button("Leave Table", menu_x, menu_y + spacing * 3, "leave_table", width=btn_w, height=btn_h, color=(150, 50, 50))
              return
 
         call_cost = self.game.current_bet - p.current_bet
-        
-        # 1. Fold
+
         self._create_button("Fold", menu_x, menu_y, "fold", width=btn_w, height=btn_h, color=(150, 50, 50))
-        
-        # 2. Check/Call
+
         if call_cost == 0:
             self._create_button("Check", menu_x, menu_y + spacing, "check", width=btn_w, height=btn_h)
         else:
             self._create_button(f"Call ${call_cost}", menu_x, menu_y + spacing, "call", width=btn_w, height=btn_h)
-            
-        # 3. Raise
+
         self._create_button("Raise...", menu_x, menu_y + spacing * 2, "open_raise_menu", width=btn_w, height=btn_h)
-        
-        # 4. Leave Table (New Position)
+
         self._create_button("Leave Table", menu_x, menu_y + spacing * 3, "leave_table", width=btn_w, height=btn_h, color=(100, 50, 50))
 
     def _draw_raise_menu(self):

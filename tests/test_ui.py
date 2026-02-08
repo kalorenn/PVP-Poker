@@ -7,10 +7,6 @@ import os
 from unittest.mock import MagicMock, patch
 import pytest
 
-# pylint: disable=redefined-outer-name, protected-access, wrong-import-position
-# pylint: disable=too-many-instance-attributes, missing-class-docstring
-
-# --- 1. GLOBAL MOCK SETUP ---
 mock_pygame = MagicMock()
 
 class MockRect:
@@ -62,7 +58,6 @@ class MockFont:
         """Returns a tuple size."""
         return (100, 20)
 
-# Attach our custom Mocks
 mock_pygame.Rect = MockRect
 mock_pygame.font.SysFont.side_effect = lambda *args, **kwargs: MockFont()
 mock_pygame.Surface.side_effect = lambda *args, **kwargs: MockSurface()
@@ -71,15 +66,12 @@ mock_pygame.time.Clock.return_value = MagicMock()
 mock_pygame.time.get_ticks.return_value = 0
 mock_pygame.mouse.get_pos.return_value = (0, 0)
 
-# --- 2. IMPORT MODULE UNDER TEST ---
 patcher = patch.dict('sys.modules', {'pygame': mock_pygame})
 patcher.start()
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.ui import PokerUI
-
-# --- 3. FIXTURES ---
 
 @pytest.fixture
 def mock_db():
@@ -113,8 +105,6 @@ def mock_game():
     game.winner = None
     game.mode = "PVE"
     return game
-
-# --- 4. TESTS ---
 
 def test_init_defaults(ui):
     """Test initial state of the UI."""
@@ -202,13 +192,11 @@ def test_bot_auto_move_timer(ui, mock_game):
     ui.game.players = [MagicMock(), bot_player]
     ui.game.active_player_index = 1
 
-    # Case 1: Too soon
     mock_pygame.time.get_ticks.return_value = 500
     ui.last_bot_move_time = 0
     ui._update_game_logic()
     ui.game.process_bot_turn.assert_not_called()
 
-    # Case 2: Time passed
     mock_pygame.time.get_ticks.return_value = 1500
     ui._update_game_logic()
     ui.game.process_bot_turn.assert_called_once()
