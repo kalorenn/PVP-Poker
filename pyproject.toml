@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]  # This allows python to find the 'src' folder as a package
+where = ["."]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -37,5 +37,4 @@ addopts = "-ra -q"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test", "*Tests"]
-# This ensures pytest can find your 'src' module without sys.path hacks
 pythonpath = ["."]
